@@ -55,3 +55,18 @@ func GetUsers() ([]User, error) {
 
 	return users, nil
 }
+
+func GetUserByUserid(userid int) (*User, error) {
+	user := &User{}
+	db := database.DB
+	query := `SELECT userid, username, userpassword, useremail FROM users WHERE userid=$1`
+
+	err := db.QueryRow(query, userid).Scan(&user.UserId, &user.UserName, &user.UserPassword, &user.UserEmail)
+
+	if err != nil {
+		log.Println("user with userid", userid, "not found")
+		return nil, err
+	}
+
+	return user, nil
+}

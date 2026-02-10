@@ -16,6 +16,7 @@ func main() {
 
 	//User end point
 	server.GET("/users", handlers.GetUsers)
+	server.GET("/users/:userid", handlers.GetUserByUserid)
 	server.POST("/users", handlers.AddUser)
 
 	//Snippet end point
