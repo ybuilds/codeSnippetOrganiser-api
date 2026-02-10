@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -54,4 +55,27 @@ func GetUserByUserid(context *gin.Context) {
 	}
 
 	context.JSON(http.StatusOK, gin.H{"user": user})
+}
+
+func DeleteUserByUserid(context *gin.Context) {
+	userId, err := strconv.ParseInt(context.Param("userid"), 10, 32)
+
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": "error parsing user id"})
+		return
+	}
+
+	rows, err := models.DeleteUserByUserid(int(userId))
+
+	if err != nil {
+		context.JSON(http.StatusNotFound, gin.H{"error": "error deleting user from database"})
+		return
+	}
+
+	if rows == 0 {
+		context.JSON(http.StatusNotFound, gin.H{"message": fmt.Sprintf("user with id %d not found", userId)})
+		return
+	}
+
+	context.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("user with id %d deleted", userId)})
 }

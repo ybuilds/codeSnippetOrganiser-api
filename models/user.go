@@ -8,9 +8,9 @@ import (
 
 type User struct {
 	UserId       int64
-	UserName     string
-	UserEmail    string
-	UserPassword string
+	UserName     string `binding:"required"`
+	UserEmail    string `binding:"required"`
+	UserPassword string `binding:"required"`
 }
 
 func (user *User) Save() error {
@@ -69,4 +69,26 @@ func GetUserByUserid(userid int) (*User, error) {
 	}
 
 	return user, nil
+}
+
+func DeleteUserByUserid(userid int) (int, error) {
+	db := database.DB
+
+	query := `DELETE FROM users WHERE userid=$1`
+
+	res, err := db.Exec(query, userid)
+
+	if err != nil {
+		log.Println("user with userid", userid, "not deleted")
+		return 0, err
+	}
+
+	rows, err := res.RowsAffected()
+
+	if err != nil {
+		log.Println("error getting number of affected rows")
+		return 0, err
+	}
+
+	return int(rows), nil
 }

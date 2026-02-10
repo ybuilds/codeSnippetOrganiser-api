@@ -18,6 +18,7 @@ func main() {
 	server.GET("/users", handlers.GetUsers)
 	server.GET("/users/:userid", handlers.GetUserByUserid)
 	server.POST("/users", handlers.AddUser)
+	server.DELETE("/users/:userid", handlers.DeleteUserByUserid)
 
 	//Snippet end point
 
