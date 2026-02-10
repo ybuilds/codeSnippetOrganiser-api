@@ -27,3 +27,31 @@ func (user *User) Save() error {
 
 	return nil
 }
+
+func GetUsers() ([]User, error) {
+	var users []User
+	db := database.DB
+
+	query := `SELECT userid, username, userpassword, useremail FROM users`
+
+	res, err := db.Query(query)
+
+	if err != nil {
+		log.Println("error fetching users from database")
+		return nil, err
+	}
+
+	for res.Next() {
+		var user User
+		err := res.Scan(&user.UserId, &user.UserName, &user.UserPassword, &user.UserEmail)
+
+		if err != nil {
+			log.Println("error parsing users from database")
+			return nil, err
+		}
+
+		users = append(users, user)
+	}
+
+	return users, nil
+}
