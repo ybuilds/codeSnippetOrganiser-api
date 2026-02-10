@@ -62,13 +62,45 @@ func GetUserByUserid(userid int) (*User, error) {
 	query := `SELECT userid, username, userpassword, useremail FROM users WHERE userid=$1`
 
 	err := db.QueryRow(query, userid).Scan(&user.UserId, &user.UserName, &user.UserPassword, &user.UserEmail)
-
 	if err != nil {
 		log.Println("user with userid", userid, "not found")
 		return nil, err
 	}
 
 	return user, nil
+}
+
+func (user *User) UpdateUserByUserid(userid int) (*User, error) {
+	updatedUser := &User{}
+	db := database.DB
+
+	query := `UPDATE users SET (username, userpassword, useremail) = ($1, $2, $3) WHERE userid = $4 RETURNING userid, username, userpassword, useremail`
+
+	oldUser, err := GetUserByUserid(userid)
+	if err != nil {
+		log.Println("user with userid", userid, "not found")
+		return nil, err
+	}
+
+	//Validations
+	user.UserId = int64(userid)
+	if user.UserName == "" {
+		user.UserName = oldUser.UserName
+	}
+	if user.UserPassword == "" {
+		user.UserPassword = oldUser.UserPassword
+	}
+	if user.UserEmail == "" {
+		user.UserEmail = oldUser.UserEmail
+	}
+
+	err = db.QueryRow(query, user.UserName, user.UserPassword, user.UserEmail, userid).Scan(&updatedUser.UserId, &updatedUser.UserName, &updatedUser.UserPassword, &updatedUser.UserEmail)
+	if err != nil {
+		log.Println("user with userid", userid, "not found")
+		return nil, err
+	}
+
+	return updatedUser, nil
 }
 
 func DeleteUserByUserid(userid int) (int, error) {
