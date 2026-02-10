@@ -7,17 +7,18 @@ import (
 )
 
 type User struct {
-	UserId    int64
-	UserName  string
-	UserEmail string
+	UserId       int64
+	UserName     string
+	UserEmail    string
+	UserPassword string
 }
 
 func (user *User) Save() error {
 	db := database.DB
 
-	query := `INSERT INTO USERS(username, useremail) VALUES($1, $2) RETURNING userid`
+	query := `INSERT INTO USERS(username, userpassword, useremail) VALUES($1, $2, $3) RETURNING userid`
 
-	err := db.QueryRow(query, user.UserName, user.UserEmail).Scan(&user.UserId)
+	err := db.QueryRow(query, user.UserName, user.UserPassword, user.UserEmail).Scan(&user.UserId)
 
 	if err != nil {
 		log.Println("error saving user to database", err)
