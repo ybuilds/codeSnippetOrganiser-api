@@ -1,10 +1,8 @@
 package models
 
 import (
-	"database/sql"
 	"log"
 
-	"ybuilds.in/codesnippet-api/database"
 	"ybuilds.in/codesnippet-api/util"
 )
 
@@ -14,8 +12,6 @@ type User struct {
 	Email    string `binding:"required" json:"email"`
 	Password string `binding:"required" json:"password"`
 }
-
-var db *sql.DB = database.DB
 
 func GetUsers() ([]User, error) {
 	var users []User

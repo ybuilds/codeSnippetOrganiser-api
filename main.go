@@ -18,6 +18,10 @@ func main() {
 	//user controller
 	controllers.UserController(server)
 
+	//snippet controller
+	controllers.SnippetController(server)
+
+	//start server
 	err := http.ListenAndServe(":8000", server)
 	if err != nil {
 		panic("unable to start server")
