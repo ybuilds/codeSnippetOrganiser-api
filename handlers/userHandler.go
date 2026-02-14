@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"database/sql"
-	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -11,93 +9,99 @@ import (
 	"ybuilds.in/codesnippet-api/models"
 )
 
-func AddUser(context *gin.Context) {
-	var user models.User
-	err := context.ShouldBindJSON(&user)
+func GetUser(ctx *gin.Context) {
+	userid, err := strconv.ParseInt(ctx.Param("userid"), 10, 64)
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": "invalid request body"})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "error parsing user ID"})
 		return
 	}
 
-	err = user.Save()
+	user, err := models.GetUser(userid)
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": "db-error: user not created"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error fetching user from user model"})
 		return
 	}
 
-	context.JSON(http.StatusCreated, gin.H{"user": user, "message": "user created"})
+	ctx.JSON(http.StatusOK, gin.H{"user": user})
 }
 
-func GetUsers(context *gin.Context) {
+func GetUsers(ctx *gin.Context) {
 	users, err := models.GetUsers()
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": "error fetching users from database"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error fetching users from user model"})
 		return
 	}
 
-	context.JSON(http.StatusOK, gin.H{"users": users})
+	ctx.JSON(http.StatusOK, gin.H{"users": users})
 }
 
-func GetUserByUserid(context *gin.Context) {
-	userId, err := strconv.ParseInt(context.Param("userid"), 10, 32)
-	if err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": "error parsing user id"})
-		return
-	}
-
-	user, err := models.GetUserByUserid(int(userId))
-	if err != nil {
-		context.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
-		return
-	}
-
-	context.JSON(http.StatusOK, gin.H{"user": user})
-}
-
-func UpdateUserByUserid(context *gin.Context) {
+func AddUser(ctx *gin.Context) {
 	var user models.User
-	userId, err := strconv.ParseInt(context.Param("userid"), 10, 32)
+
+	err := ctx.ShouldBindJSON(&user)
 	if err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": "error parsing user id"})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "error parsing request body"})
 		return
 	}
 
-	err = context.ShouldBindJSON(&user)
+	err = user.AddUser()
 	if err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body for update"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error saving user to database from model"})
 		return
 	}
 
-	updatedUser, err := user.UpdateUserByUserid(int(userId))
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			context.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
-		} else {
-			context.JSON(http.StatusInternalServerError, gin.H{"error": "error updating user"})
-		}
-		return
-	}
-
-	context.JSON(http.StatusOK, gin.H{"user": updatedUser, "message": "user updated"})
+	ctx.JSON(http.StatusCreated, gin.H{"message": fmt.Sprintf("user with id %d created", user.Id)})
 }
 
-func DeleteUserByUserid(context *gin.Context) {
-	userId, err := strconv.ParseInt(context.Param("userid"), 10, 32)
+func UpdateUser(ctx *gin.Context) {
+	userid, err := strconv.ParseInt(ctx.Param("userid"), 10, 64)
 	if err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": "error parsing user id"})
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "error parsing user ID"})
 		return
 	}
 
-	rows, err := models.DeleteUserByUserid(int(userId))
+	_, err = models.GetUser(userid)
 	if err != nil {
-		context.JSON(http.StatusNotFound, gin.H{"error": "error deleting user from database"})
+		ctx.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("user with id %d not found", userid)})
 		return
 	}
 
-	if rows == 0 {
-		context.JSON(http.StatusNotFound, gin.H{"message": fmt.Sprintf("user with id %d not found", userId)})
+	var updatedUser models.User
+	err = ctx.ShouldBindJSON(&updatedUser)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "error parsing request body"})
 		return
 	}
 
-	context.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("user with id %d deleted", userId)})
+	updatedUser.Id = userid
+
+	err = updatedUser.UpdateUser()
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error updating user in database from model"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"user": updatedUser})
+}
+
+func DeleteUser(ctx *gin.Context) {
+	userid, err := strconv.ParseInt(ctx.Param("userid"), 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "error parsing user ID"})
+		return
+	}
+
+	user, err := models.GetUser(userid)
+	if err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("user with id %d not found", userid)})
+		return
+	}
+
+	err = user.DeleteUser()
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error deleting user from database from model"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("user with id %d deleted", user.Id)})
 }
