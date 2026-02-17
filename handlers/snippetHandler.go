@@ -105,3 +105,27 @@ func DeleteSnippet(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("snippet with id %d deleted", snippet.Id)})
 }
+
+func GetSnippetByCategory(ctx *gin.Context) {
+	snippetCategory := ctx.Param("category")
+
+	snippet, err := models.GetSnippetByCategory(snippetCategory)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error fetching snippet from snippet model"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"snippet": snippet})
+}
+
+func GetSnippetByLanguage(ctx *gin.Context) {
+	snippetLanguage := ctx.Param("language")
+
+	snippet, err := models.GetSnippetByLanguage(snippetLanguage)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error fetching snippet from snippet model"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"snippet": snippet})
+}
