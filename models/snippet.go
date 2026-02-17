@@ -89,11 +89,10 @@ func (snippet *Snippet) DeleteSnippet() error {
 	return nil
 }
 
-func GetSnippetByCategory(category string) ([]Snippet, error) {
+func GetSnippetsByField(query, field string) ([]Snippet, error) {
 	var snippets []Snippet
 
-	query := `select id, name, code, language, category, userid from snippets where category = $1`
-	res, err := db.Query(query, category)
+	res, err := db.Query(query, field)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			log.Println("no rows found")
@@ -112,25 +111,24 @@ func GetSnippetByCategory(category string) ([]Snippet, error) {
 	return snippets, nil
 }
 
-func GetSnippetByLanguage(language string) ([]Snippet, error) {
-	var snippets []Snippet
-
-	query := `select id, name, code, language, category, userid from snippets where language = $1`
-	res, err := db.Query(query, language)
+func GetSnippetByCategory(category string) ([]Snippet, error) {
+	query := `select id, name, code, language, category, userid from snippets where category = $1`
+	res, err := GetSnippetsByField(query, category)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			log.Println("no rows found")
-			return nil, err
-		}
 		log.Println("error fetching snippets from database")
 		return nil, err
 	}
 
-	for res.Next() {
-		var snippet Snippet
-		err = res.Scan(&snippet.Id, &snippet.Name, &snippet.Code, &snippet.Category, &snippet.Language, &snippet.Userid)
-		snippets = append(snippets, snippet)
+	return res, nil
+}
+
+func GetSnippetByLanguage(language string) ([]Snippet, error) {
+	query := `select id, name, code, language, category, userid from snippets where language = $1`
+	res, err := GetSnippetsByField(query, language)
+	if err != nil {
+		log.Println("error fetching snippets from database")
+		return nil, err
 	}
 
-	return snippets, nil
+	return res, nil
 }
