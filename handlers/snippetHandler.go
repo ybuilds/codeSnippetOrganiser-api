@@ -60,9 +60,9 @@ func UpdateSnippet(ctx *gin.Context) {
 		return
 	}
 
-	_, err = models.GetUser(snippetid)
+	_, err = models.GetSnippet(snippetid)
 	if err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("user with id %d not found", snippetid)})
+		ctx.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("snippet with id %d not found", snippetid)})
 		return
 	}
 

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"log"
 
 	"ybuilds.in/codesnippet-api/util"
@@ -94,6 +95,24 @@ func (user *User) DeleteUser() error {
 	if err != nil {
 		log.Println("error deleting user from database")
 		return err
+	}
+
+	return nil
+}
+
+func ValidateUser(email, password string) error {
+	var dbPassword string
+	query := `select password from users where email=$1`
+
+	err := db.QueryRow(query, email).Scan(&dbPassword)
+	if err != nil {
+		log.Println("error fetching user from database")
+		return err
+	}
+
+	validate := util.ValidatePassword(dbPassword, password)
+	if !validate {
+		return errors.New("passwords do not match")
 	}
 
 	return nil

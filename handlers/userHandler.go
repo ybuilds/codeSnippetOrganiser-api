@@ -105,3 +105,26 @@ func DeleteUser(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("user with id %d deleted", user.Id)})
 }
+
+func ValidateUser(ctx *gin.Context) {
+	type authUser struct {
+		Email    string
+		Password string
+	}
+
+	var user authUser
+
+	err := ctx.ShouldBindJSON(&user)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "error parsing request body"})
+		return
+	}
+
+	err = models.ValidateUser(user.Email, user.Password)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "user authenticated successfully"})
+}
