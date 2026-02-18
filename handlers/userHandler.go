@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"ybuilds.in/codesnippet-api/models"
+	"ybuilds.in/codesnippet-api/util"
 )
 
 func GetUser(ctx *gin.Context) {
@@ -60,9 +61,15 @@ func UpdateUser(ctx *gin.Context) {
 		return
 	}
 
-	_, err = models.GetUser(userid)
+	user, err := models.GetUser(userid)
 	if err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("user with id %d not found", userid)})
+		return
+	}
+
+	ctxUserId := ctx.GetInt64("userId")
+	if user.Id != ctxUserId {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized update not permitted"})
 		return
 	}
 
@@ -97,6 +104,12 @@ func DeleteUser(ctx *gin.Context) {
 		return
 	}
 
+	ctxUserId := ctx.GetInt64("userId")
+	if user.Id != ctxUserId {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized delete not permitted"})
+		return
+	}
+
 	err = user.DeleteUser()
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error deleting user from database from model"})
@@ -120,11 +133,17 @@ func ValidateUser(ctx *gin.Context) {
 		return
 	}
 
-	err = models.ValidateUser(user.Email, user.Password)
+	userId, err := models.ValidateUser(user.Email, user.Password)
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"message": "user authenticated successfully"})
+	token, err := util.GenerateToken(userId, user.Email)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "user authenticated successfully", "jwt": token})
 }

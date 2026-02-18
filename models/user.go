@@ -100,20 +100,21 @@ func (user *User) DeleteUser() error {
 	return nil
 }
 
-func ValidateUser(email, password string) error {
+func ValidateUser(email, password string) (int64, error) {
+	var userId int64
 	var dbPassword string
-	query := `select password from users where email=$1`
+	query := `select id, password from users where email=$1`
 
-	err := db.QueryRow(query, email).Scan(&dbPassword)
+	err := db.QueryRow(query, email).Scan(&userId, &dbPassword)
 	if err != nil {
 		log.Println("error fetching user from database")
-		return err
+		return -1, err
 	}
 
 	validate := util.ValidatePassword(dbPassword, password)
 	if !validate {
-		return errors.New("passwords do not match")
+		return -1, errors.New("passwords do not match")
 	}
 
-	return nil
+	return userId, nil
 }

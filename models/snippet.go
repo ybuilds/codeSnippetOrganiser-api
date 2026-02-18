@@ -12,7 +12,7 @@ type Snippet struct {
 	Code     string `json:"code"`
 	Language string `binding:"required" json:"language"`
 	Category string `binding:"required" json:"category"`
-	Userid   int    `binding:"required" json:"userid"`
+	Userid   int64  `json:"userid"`
 }
 
 func GetSnippets() ([]Snippet, error) {
@@ -54,7 +54,7 @@ func GetSnippet(snippetid int64) (*Snippet, error) {
 }
 
 func (snippet *Snippet) AddSnippet() error {
-	query := `insert into snippet(name, code, language, category, userid) values ($1, $2, $3, $4, $5)`
+	query := `insert into snippets(name, code, language, category, userid) values ($1, $2, $3, $4, $5) returning id`
 
 	err := db.QueryRow(query, snippet.Name, snippet.Code, snippet.Language, snippet.Category, snippet.Userid).Scan(&snippet.Id)
 	if err != nil {
@@ -68,7 +68,7 @@ func (snippet *Snippet) AddSnippet() error {
 func (snippet *Snippet) UpdateSnippet() error {
 	query := `update snippets set name=$1, code=$2, language=$3, category=$4, userid=$5 where id=$6`
 
-	err := db.QueryRow(query, snippet.Name, snippet.Code, snippet.Language, snippet.Category, snippet.Userid).Scan(&snippet.Id)
+	_, err := db.Query(query, snippet.Name, snippet.Code, snippet.Language, snippet.Category, snippet.Userid, snippet.Id)
 	if err != nil {
 		log.Println("error updating snippet in database")
 		return err

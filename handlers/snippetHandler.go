@@ -32,7 +32,7 @@ func GetSnippets(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"users": snippets})
+	ctx.JSON(http.StatusOK, gin.H{"snippets": snippets})
 }
 
 func AddSnippet(ctx *gin.Context) {
@@ -44,6 +44,8 @@ func AddSnippet(ctx *gin.Context) {
 		return
 	}
 
+	userId := ctx.GetInt64("userId")
+	snippet.Userid = userId
 	err = snippet.AddSnippet()
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "error saving snippet to database from model"})
@@ -60,9 +62,15 @@ func UpdateSnippet(ctx *gin.Context) {
 		return
 	}
 
-	_, err = models.GetSnippet(snippetid)
+	snippet, err := models.GetSnippet(snippetid)
 	if err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("snippet with id %d not found", snippetid)})
+		return
+	}
+
+	ctxUserId := ctx.GetInt64("userId")
+	if snippet.Userid != ctxUserId {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized update not permitted"})
 		return
 	}
 
@@ -74,6 +82,7 @@ func UpdateSnippet(ctx *gin.Context) {
 	}
 
 	updatedSnippet.Id = snippetid
+	updatedSnippet.Userid = ctxUserId
 
 	err = updatedSnippet.UpdateSnippet()
 	if err != nil {
@@ -94,6 +103,12 @@ func DeleteSnippet(ctx *gin.Context) {
 	snippet, err := models.GetSnippet(snippetid)
 	if err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("snippet with id %d not found", snippetid)})
+		return
+	}
+
+	ctxUserId := ctx.GetInt64("userId")
+	if snippet.Userid != ctxUserId {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "other users not allowed to delete"})
 		return
 	}
 
